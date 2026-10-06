@@ -16,6 +16,8 @@ const default_settings = {
     debug_mode: false,
     max_width_horizontal: 220,
     hide_message_buttons: false,
+    double_tap_mobile: true,
+    double_tap_desktop: false,
 };
 const settings_ui_map = {}  // map of settings to UI elements
 
@@ -75,10 +77,24 @@ function unescape_string(text) {
 }
 
 // Settings Management
+function is_mobile_device() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+        || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+function get_double_tap_setting_key() {
+    return is_mobile_device() ? 'double_tap_mobile' : 'double_tap_desktop';
+}
 function initialize_settings() {
     if (extension_settings[MODULE_NAME] !== undefined) {  // setting already initialized
         log("Settings already initialized.")
-        extension_settings[MODULE_NAME] = Object.assign(structuredClone(default_settings), extension_settings[MODULE_NAME]);
+        const settings = extension_settings[MODULE_NAME];
+        if (Object.prototype.hasOwnProperty.call(settings, 'double_tap')) {
+            settings.double_tap_mobile = settings.double_tap;
+            settings.double_tap_desktop = settings.double_tap;
+            delete settings.double_tap;
+            saveSettingsDebounced();
+        }
+        extension_settings[MODULE_NAME] = Object.assign(structuredClone(default_settings), settings);
     } else {  // no settings present, first time initializing
         log("Extension settings not found. Initializing...")
         extension_settings[MODULE_NAME] = structuredClone({...default_settings});
@@ -86,6 +102,9 @@ function initialize_settings() {
 }
 function set_settings(key, value, copy=false) {
     // Set a setting for the extension and save it
+    if (key === 'double_tap') {
+        key = get_double_tap_setting_key();
+    }
     if (copy) {
         value = structuredClone(value)
     }
@@ -94,6 +113,9 @@ function set_settings(key, value, copy=false) {
 }
 function get_settings(key, copy=false) {
     // Get a setting for the extension, or the default value if not set
+    if (key === 'double_tap') {
+        key = get_double_tap_setting_key();
+    }
     let value = extension_settings[MODULE_NAME]?.[key] ?? default_settings[key];
     if (copy) {  // needed when retrieving objects
         return structuredClone(value)
