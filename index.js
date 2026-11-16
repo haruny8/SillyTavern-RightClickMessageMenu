@@ -307,10 +307,11 @@ function get_buttons($message_div) {
     })
 
     if ($edit.length > 0) {
-        let at_index = array.indexOf($edit)
-        array.splice(at_index, 1);
-        array.splice(0, 0, $edit[0]);  // edit button goes first
-        array.push($delete[0])  // delete button goes last
+        let edit_button = $edit[0]
+        let at_index = array.indexOf(edit_button)
+        if (at_index !== -1) array.splice(at_index, 1)
+        array.unshift(edit_button)  // edit button goes first
+        if ($delete.length > 0) array.push($delete[0])  // delete button goes last
         $buttons = $(array)
     } else {
         debug('Failed to located edit button: ', $buttons)
